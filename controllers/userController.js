@@ -152,44 +152,44 @@ exports.userLoginController = async (req, res) => {
   try {
     const { email, password } = req.body;
     const validate = loginValidator({ email, password });
-
     if (!validate.isValid) {
-        return res.status(400).json(validate.error);
-      };
-    const user = await User.findOne({ email });
+      return res.status(400).json({ message: 'Validation error', errors: validate.error });
+    }
+    const user = await User.findOne({ email }).maxTimeMS(5000); // Set 5-second timeout
     if (!user) {
-        return res.status(404).json({
-            message: 'Email does not exist'
-        });
-      };
+      return res.status(404).json({ message: 'Email does not exist' });
+    }
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-        return res.status(401).json({
-            message: 'Incorrect password'
-        });
-      };
-      const token = jwtToken.sign({
+      return res.status(401).json({ message: 'Incorrect password' });
+    }
+    const token = jwtToken.sign(
+      {
         _id: user._id,
         name: user.name,
         email: user.email,
         role: user.role,
-        notes: user.notes
+        notes: user.notes,
       },
       SECRET,
-          {
-              expiresIn: '24h'
-          }
+      { expiresIn: '24h' }
     );
     return res.status(200).json({
       message: 'Login successful',
       token: `Bearer ${token}`,
     });
   } catch (error) {
-      return res.status(500).json({
-          message: 'Server error occurred',
-          error: error.message
+    if (error.name === 'MongoServerSelectionError' || error.message.includes('buffering timed out')) {
+      return res.status(503).json({
+        message: 'Database connection timed out. Please try again later.',
+        error: error.message,
       });
-    };
+    }
+    return res.status(500).json({
+      message: 'Server error occurred',
+      error: error.message,
+    });
+  }
 };
 
 exports.userUpdateController = async (req, res) => {
