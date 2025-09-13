@@ -30,10 +30,7 @@ exports.usersGetController = async (req, res) => {
     };
     return res.status(200).json({
       message: 'Users retrieved successfully',
-      users: users.map(user => ({
-        name: user.name,
-        email: user.email,
-        role: user.role
+      users
       }))
     });
   } catch (error) {
