@@ -31,11 +31,14 @@ exports.usersGetController = async (req, res) => {
     return res.status(200).json({
       message: 'Users retrieved successfully',
       users: users.map(user => ({
+        id: user._id,
         name: user.name,
         email: user.email,
-        role: user.role
+        role: user.role,
+        createdAt : user.createdAt
       }))
     });
+    
   } catch (error) {
     return res.status(500).json({
       message: 'Server error occurred',
@@ -194,7 +197,7 @@ exports.userLoginController = async (req, res) => {
 
 exports.userUpdateController = async (req, res) => {
     const { name, email } = req.body;
-    const validate = updateValidator({ name, email });
+  const validate = updateValidator({ name, email });
   try {
     if (!validate.isValid) {
         return res.status(400).json(validate.error);
@@ -206,7 +209,7 @@ exports.userUpdateController = async (req, res) => {
           return res.status(error.status).json({ message: error.message });
       };
       const updatedUser = await User.findOneAndUpdate({
-          _id: decoded._id
+         _id: decoded._id
       }, {
           $set: {
             name,
